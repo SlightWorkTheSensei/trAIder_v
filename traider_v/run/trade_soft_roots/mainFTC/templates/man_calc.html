@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Futures Trading Calculator</title>
+    <style>
+        body {
+            background-color: black;
+            color: lime;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+        }
+
+        input {
+            background-color: black;
+            color: lime;
+            border: none;
+            border-bottom: 1px solid lime;
+        }
+
+        input:focus {
+            outline: none;
+        }
+
+        /* Style the scrollbar thumb */
+        ::-webkit-scrollbar {
+            width: 12px;
+            /* Adjust as needed */
+            background: linear-gradient(to bottom, rgb(0, 0, 0), red);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, rgb(60, 255, 0), rgb(255, 255, 255));
+            border-radius: 6px;
+            /* Adjust to match scrollbar width */
+        }
+
+        button {
+            background-color: lime;
+            color: black;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .output {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Manual Futures Trading Calculator</h1>
+        <form method="post" action="/">
+            <div class="form-group">
+                <label for="buying_power">Buying Power:</label>
+                <input type="number" id="buying_power" name="buying_power" required>
+            </div>
+            <div class="form-group">
+                <label for="risk">Risk:</label>
+                <input type="number" step="any" id="risk" name="risk" required>
+            </div>
+            <div class="form-group">
+                <label for="entry_price">Entry Price:</label>
+                <input type="number" step="any" id="entry_price" name="entry_price" required>
+            </div>
+            <div class="form-group">
+                <label for="stop_price">Stop Price:</label>
+                <input type="number" step="any" id="stop_price" name="stop_price" required>
+            </div>
+            <div class="form-group">
+                <label for="contract_size">Contract Size:</label>
+                <input type="number" step="any" id="contract_size" name="contract_size" required>
+            </div>
+            <div class="form-group">
+                <label for="initial_margin">
+                    <h5>NOTE: If no initial margin listed,<br> then initial margin = Entry Price</h5>Initial Margin:
+                </label>
+                <input type="number" step="any" id="initial_margin" name="initial_margin" required>
+            </div>
+            <div class="form-group">
+                <label for="tick_size">Tick Size:</label>
+                <input type="number" step="any" id="tick_size" name="tick_size" required>
+            </div>
+            <div class="form-group">
+                <label for="tick_value">Tick Value:</label>
+                <input type="number" step="any" id="tick_value" name="tick_value" required>
+            </div>
+            <button type="submit">Calculate</button>
+        </form>
+
+        {% if data %}
+        <div class="output">
+            <p><strong>Entry:</strong> {{ data.entry }}</p>
+            <p><strong>Stop:</strong> {{ data.stop }}</p>
+            <p><strong>Target 1:</strong> {{ data.target1 }}</p>
+            <p><strong>Target 2:</strong> {{ data.target2 }}</p>
+            <p><strong>Price per Contract:</strong> {{ data.price_per_contract }}</p>
+            <p><strong>Risk per Contract:</strong> {{ data.risk_per_contract }}</p>
+            <p><strong>Contracts Required:</strong> {{ data.contracts_required }}</p>
+            <p><strong>Cost of Contracts:</strong> {{ data.cost_of_contracts }}</p>
+            <p><strong>Actual Risk Exposure:</strong> {{ data.actual_risk_exposure }}</p>
+            <p><strong>Margin Ratio:</strong> {{ data.margin_ratio }}</p>
+            <p><strong>Leveraged Buying Power:</strong> {{ data.leveraged_buying_power }}</p>
+            <p><strong>Leverage to Cost Ratio(if LTC>1=LowerNumContracts):</strong> {{ data.leverage_to_cost_ratio }}</p>
+        </div>
+        {% endif %}
+
+    </div>
+</body>
+
+</html>

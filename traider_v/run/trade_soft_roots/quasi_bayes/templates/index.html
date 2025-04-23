@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Plan Backtester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Courier New', Courier, monospace;
+            background: linear-gradient(135deg, #1c1c1e 0%, #383838 100%);
+            overflow: hidden;
+            color: #ff00ff;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            width: 400px;
+        }
+
+        h1 {
+            font-size: 2em;
+            color: #ff00ff;
+            text-shadow: 0px 0px 20px #ff00ff, 0px 0px 40px #ff00ff, 0px 0px 60px #ff00ff;
+            animation: glow 2s ease-in-out infinite alternate;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 1.2em;
+            color: #00ff9d;
+            background: transparent;
+            border: 2px solid #00ff9d;
+            border-radius: 10px;
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 157, 0.5), 0 0 20px rgba(0, 255, 157, 0.5);
+            transition: box-shadow 0.4s ease, transform 0.3s ease;
+            text-align: center;
+        }
+
+        button {
+            padding: 15px 30px;
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #000000;
+            background: #ff00ff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0px 0px 10px #ff00ff, 0px 0px 20px #ff00ff, 0px 0px 30px #ff00ff;
+            transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+        }
+
+        button:hover {
+            background: #00ff9d;
+            box-shadow: 0px 0px 20px #00ff9d, 0px 0px 40px #00ff9d, 0px 0px 60px #00ff9d;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Enter a Ticker Symbol</h1>
+        <form method="POST">
+            <input type="text" name="ticker" required placeholder="e.g., AAPL, MSFT">
+
+            <label for="action">Choose an Action:</label>
+            <select name="action" required>
+                <option value="run_algorithm">Run Algorithm</option>
+                <option value="view_latest">View Latest Data</option>
+            </select>
+
+            <button type="submit">Submit</button>
+
+            <button onclick="window.location.href='/bar'">Comparison Tool</button>
+        </form>
+    </div>
+</body>
+</html>

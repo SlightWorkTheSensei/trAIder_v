@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Trading Tools</title>
+    <style>
+        body {
+            background-color: black;
+            color: green;
+            font-family: 'Courier New', monospace;
+        }
+
+        h1 {
+            border-bottom: 1px solid white;
+            padding-bottom: 10px;
+            margin-top: 20px;
+            color: rgb(39, 236, 81);
+        }
+
+        form {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid rgb(39, 236, 81);
+            border-radius: 5px;
+        }
+
+        input[type="text"],
+        input[type="submit"],
+        input[type="date"] {
+            background-color: black;
+            color: rgb(95, 95, 95);
+            border: 1px solid green;
+            padding: 5px;
+            margin: 5px;
+            border-radius: 3px;
+            width: 65%;
+        }
+
+        input[type="hidden"] {
+            display: flex;
+            flex-direction: column;
+        }
+
+        body {
+            background-color: black;
+            color: green;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+            display: flex;
+            flex-direction: row;
+            /* align-items: center; */
+        }
+
+        .container {
+            width: 100%;
+            /* Each container takes 40% width of its parent */
+
+            /* Optional spacing between containers */
+            /* Your existing container styles */
+            border: 2px solid green;
+
+            border-radius: 10px;
+            box-shadow: 0 0 10px green;
+            text-align: left;
+        }
+        
+
+        .container-wrapper {
+            display: flex;
+            justify-content: flex-end;
+            /* Aligns containers to the right */
+            width: 100%;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        input,
+        button {
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid green;
+            border-radius: 5px;
+            background-color: black;
+            color: green;
+            width: 50%;
+        }
+
+        input::placeholder {
+            color: rgb(95, 95, 95);
+        }
+
+        button {
+            cursor: pointer;
+            color: rgb(95, 95, 95);
+        }
+
+        button:hover {
+            background-color: green;
+            color: black;
+        }
+
+        #result {
+            white-space: pre-wrap;
+            /* Preserves line breaks */
+        }
+
+        .calc-container-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-evenly;
+            gap: 20px;
+            width: 100%;
+            /* Adjust width as necessary */
+        }
+
+        .form-wrapper {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-evenly;
+            gap: 20px;
+            width: 30%;
+            /* Adjust width as necessary */
+
+        }
+
+        /* If the screen is too narrow, stack the blocks */
+        @media (max-width: 800px) {
+
+            .calc-container-wrapper,
+            .form-wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .container {
+                width: 100%;
+            }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid green;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #181818;
+        }
+
+        tr:nth-child(even) {
+            background-color: #000000
+        }
+
+        .clicked {
+            background-color: #90ee90;
+            /* Light green color when cell is clicked */
+        }
+
+
+        .termcon {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            background-color: black;
+            color: green;
+            font-family: 'Courier New', monospace;
+        }
+
+        .terminal {
+            width: 160px;
+            background-color: black;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            border: 1px solid green;
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+            /* Adjust as needed */
+            background: linear-gradient(to bottom, rgb(0, 0, 0), red);
+        }
+
+        /* Style the scrollbar thumb */
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, rgb(60, 255, 0), rgb(255, 255, 255));
+            border-radius: 6px;
+            /* Adjust to match scrollbar width */
+        }
+
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <div style="position: absolute; top: 0; left: 0;">
+        Logged In: {{ current_time }}
+    </div>
+    <div class="termcon">
+        <div class="terminal">
+            <h1>Welcome, {{ session['username'] }}</h1>
+            <form action="/send_message" method="post">
+                <input type="text" name="message" placeholder="Your message">
+                <input type="submit" value="Send">
+            </form>
+            <div class="container" id="chat-log">
+                <div style="display: flex; flex-direction: column-reverse;">
+                {% for entry in chat_log %}
+                <p> ({{ entry['timestamp'] }}): <br> {{ entry['message'] }}</p>
+                {% endfor %}
+            </div>
+
+        </div>
+    </div>
+
+
+
+
+    <div class="calc-container-wrapper">
+        <div class="container">
+            <h1>Initial Inputs</h1>
+            <form method="POST">
+                <label for="bp">Buying Power</label>
+                <input type="number" step="0.01" id="bp" name="bp" placeholder="Enter Buying Power" value="{{ bp }}"
+                    required>
+
+                <br>
+                <label for="initial_risk">Initial Risk</label>
+                <input type="number" step="0.01" id="initial_risk" name="initial_risk" placeholder="Enter Initial Risk"
+                    value="{{ initial_risk }}" required>
+                <br>
+                <label for="mb">Market Bias</label>
+                <input type="text" id="mb" name="mb" placeholder="Enter Market Bias:" value="{{ mb }}" required>
+
+                <button type="submit">Set Parameters</button>
+            </form>
+            <div class="container">
+                <h1>Shares Calculator</h1>
+                <form method="POST">
+                    <label for="entry"></label>
+                    <input type="number" step="0.0000001" id="entry" name="entry" placeholder="Entry Price" required>
+
+                    <label for="stop"></label>
+                    <input type="number" step="0.0000001" id="stop" name="stop" placeholder="Stop Price" required>
+
+                    <button type="submit">Calculate</button>
+                </form>
+                {% if Risk is not none %}
+                <div>
+                    <p><strong>Risk:</strong> ${{ Risk }}</p>
+                    <p><strong>Shares:</strong> {{ Shares }}</p>
+                    <p><strong>Cost:</strong> ${{ Cost }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div id="container">
+                <h1>Average Trading Range Calculator</h1>
+                <form id="tickerForm">
+                    <label for="ticker"></label>
+                    <input type="text" id="ticker" name="ticker" placeholder="Ticker" required>
+                    <button type="submit">Calculate</button>
+                </form>
+                <div id="result"></div>
+
+
+
+                <div id="container">
+                    <!-- HTML form for input -->
+                    <form id="commitmentForm">
+                        <h1>Commitment Calculator</h1>
+                        <label for="volume1"></label>
+                        <input type="number" step="0.001" id="volume1" name="volume1" placeholder="Current Volume" required>
+
+                        <label for="volume2"></label>
+                        <input type="number" step="0.001" id="volume2" name="volume2" placeholder="Average Volume" required>
+
+                        <input type="submit" value="Divide Volumes">
+                    </form>
+
+                    <!-- Div to display the result -->
+                    <div id="com_result"></div>
+                </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="form-wrapper">
+
+        <div class="container">
+            <h1>PreTrade Tracking</h1>
+            <form id="myForm" action="/submit" method="post">
+                <div style="display: flex; flex-direction: column;">
+                    {% for field in fields %}
+                    <label for="{{ field }}">{{ field }}</label>
+                    <input type="text" id="{{ field }}" name="{{ field }}">
+                    {% endfor %}
+                </div>
+                <br>
+                <input type="submit" value="Submit">
+            </form>
+        </div>
+
+    </div>
+
+
+    <div class="container" id="checklist-container">
+        <h1>Trade Pattern Checklist</h1>
+        <!-- The checklist table will be inserted here by JavaScript -->
+    </div>
+
+
+
+
+
+    <script>
+        $("#myForm").submit(function (e) {
+            e.preventDefault();
+            $.ajax({
+                url: "/submit",
+                type: "post",
+                data: $("#myForm").serialize(),
+                success: function (response) {
+                    if (response.status === 'success') {
+                        alert('Success');
+                    }
+                },
+                error: function () {
+                    alert('Error');
+                }
+            });
+        });
+
+
+
+        document.getElementById('tickerForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var ticker = document.getElementById('ticker').value;
+            fetch('/calculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ticker: ticker })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Define a sort order for the timeframes
+                    var sortOrder = {
+                        '1-minute': 1,
+                        '15-minute': 2,
+                        'Hourly': 3,
+                        'Daily': 4,
+                        'Weekly': 5,
+                        'Monthly': 6
+                    };
+
+                    // Custom sort function to sort timeframes by the defined order
+                    var timeframes = Object.keys(data.ranges).sort(function (a, b) {
+                        return sortOrder[a] - sortOrder[b];
+                    });
+
+                    var resultText = '';
+                    for (var i = 0; i < timeframes.length; i++) {
+                        var interval = timeframes[i];
+                        resultText += interval + ': ' + data.ranges[interval] + '\n';
+                    }
+                    document.getElementById('result').innerText = resultText;
+                });
+        });
+
+
+        // JavaScript function to divide volumes and format the result
+        document.getElementById('commitmentForm').onsubmit = function (event) {
+            event.preventDefault(); // Prevent the form from submitting the traditional way
+
+            var volume1 = parseFloat(document.getElementById('volume1').value);
+            var volume2 = parseFloat(document.getElementById('volume2').value);
+
+            if (volume2 === 0) {
+                document.getElementById('com_result').innerText = 'Cannot divide by zero';
+            } else {
+                var result = volume1 / volume2;
+                // Format result to 2 decimal places
+                document.getElementById('com_result').innerText = 'Result: ' + result.toFixed(2);
+            }
+        };
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch('data.csv')
+                .then(response => response.text())
+                .then(text => {
+                    const dataArray = parseCSV(text);
+                    createTableFromCSV(dataArray);
+                })
+                .catch(error => console.error('Error fetching or processing CSV:', error));
+        });
+
+        function parseCSV(csvText) {
+            const rows = csvText.trim().split('\n');
+            const dataArray = rows.map(row => row.split(','));
+            return dataArray;
+        }
+
+        function createTableFromCSV(csvData) {
+            const container = document.getElementById('checklist-container');
+            let table = document.createElement('table');
+
+            // Assume the first row contains headers
+            let headers = csvData.shift();
+
+            // Create the header row
+            let headerRow = table.insertRow();
+            headers.forEach(headerText => {
+                let th = document.createElement('th');
+                th.textContent = headerText.trim();
+                headerRow.appendChild(th);
+            });
+
+            // Find the longest column
+            let maxColumnLength = Math.max(...csvData.map(row => row.length));
+
+            // Populate the table cells
+            for (let i = 0; i < maxColumnLength; i++) { // Iterate over each 'column'
+                let tr = table.insertRow();
+                for (let j = 0; j < headers.length; j++) { // Iterate over each 'row'
+                    let td = tr.insertCell();
+                    td.textContent = csvData[j] && csvData[j][i] ? csvData[j][i].trim() : '';
+                    // Add click event to toggle background color
+                    td.addEventListener('click', function () {
+                        this.classList.toggle('clicked');
+                    });
+                }
+            }
+
+            container.appendChild(table);
+        }
+
+
+    </script>
+</body>
+
+
+</html>

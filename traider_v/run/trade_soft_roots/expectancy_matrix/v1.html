@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risk Per Trade Calculator</title>
+    <style>
+        body {
+            font-family: "Courier New", monospace;
+            text-align: center;
+            margin: 20px;
+            background-color: #080808;
+            color: #d1afff;
+        }
+        .container {
+            max-width: 650px;
+            margin: auto;
+            background: #111;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px #d1afff;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: black;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #d1afff;
+            text-align: center;
+            color: #d1afff;
+            position: relative;
+        }
+        th {
+            background-color: #330066;
+        }
+        td {
+            background-color: #220044;
+            cursor: pointer;
+        }
+        .tooltip {
+            visibility: hidden;
+            width: 280px;
+            background-color: black;
+            color: white;
+            text-align: left;
+            padding: 8px;
+            border-radius: 5px;
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+            white-space: normal;
+            font-size: 0.9em;
+            box-shadow: 0 0 10px #d1afff;
+        }
+        td:hover .tooltip {
+            visibility: visible;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Risk Per Trade Calculator</h2>
+    
+    <label class="slider-label">Batting Average (Win %): <span id="winRateLabel">50</span>%</label>
+    <input type="range" id="winRate" min="10" max="90" step="1" value="50" oninput="updateTable()">
+    
+    <label class="slider-label">Number of Trades: <span id="tradeCountLabel">100</span></label>
+    <input type="range" id="tradeCount" min="1" max="240" step="1" value="100" oninput="updateTable()">
+    
+    <table id="riskTable">
+        <thead>
+            <tr>
+                <th>Reward:Risk</th>
+                <th>1:1</th>
+                <th>2:1</th>
+                <th>3:1</th>
+                <th>4:1</th>
+                <th>5:1</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr id="expectancyRow"><td>Expectancy</td></tr>
+            <tr id="riskRow"><td>Risk %</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function updateTable() {
+        let winRate = parseFloat(document.getElementById("winRate").value) / 100;
+        let tradeCount = parseInt(document.getElementById("tradeCount").value);
+
+        document.getElementById("winRateLabel").textContent = Math.round(winRate * 100);
+        document.getElementById("tradeCountLabel").textContent = tradeCount;
+
+        let expectancyRow = document.getElementById("expectancyRow");
+        let riskRow = document.getElementById("riskRow");
+
+        expectancyRow.innerHTML = "<td>Expectancy</td>";
+        riskRow.innerHTML = "<td>Risk %</td>";
+
+        for (let R = 1; R <= 5; R++) {
+            let expectancy = (winRate * R) - ((1 - winRate) * 1);
+            let riskPercent = Math.min(1, expectancy * 0.5);
+            riskPercent = Math.max(0, riskPercent).toFixed(2) + "%";
+
+            let expectedWins = Math.round(winRate * tradeCount);
+            let expectedLosses = tradeCount - expectedWins;
+            let avgProfitPerTrade = (expectancy * 100).toFixed(2);
+            let expectedProfitTotal = (expectancy * tradeCount * 100).toFixed(2);
+
+            let expectancyCell = document.createElement("td");
+            expectancyCell.innerHTML = expectancy.toFixed(2) + 
+                `<div class="tooltip"> 
+                    Over ${tradeCount} trades at ${R}:1 R:R:<br> 
+                    - Expected wins: ${expectedWins}<br> 
+                    - Expected losses: ${expectedLosses}<br> 
+                    - Expectancy per trade: ${avgProfitPerTrade}%<br> 
+                    - Expected total profit: ${expectedProfitTotal}%
+                </div>`;
+
+            let riskCell = document.createElement("td");
+            riskCell.innerHTML = riskPercent + 
+                `<div class="tooltip"> 
+                    If you risk ${riskPercent} per trade:<br> 
+                    - Expected long-term capital growth: Positive<br>
+                    - Adjust risk based on expectancy for sustainability.
+                </div>`;
+
+            expectancyRow.appendChild(expectancyCell);
+            riskRow.appendChild(riskCell);
+        }
+    }
+
+    updateTable(); // Initial call to populate table
+</script>
+
+</body>
+</html>

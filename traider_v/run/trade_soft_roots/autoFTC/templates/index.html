@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Futures Trading App</title>
+    <style>
+        body {
+            background-color: black;
+            color: lime;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            background-color: black;
+            color: lime;
+            border: none;
+            border-bottom: 1px solid lime;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+        }
+        button {
+            background-color: lime;
+            color: black;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .output {
+            margin-top: 20px;
+        }
+        hr.styled-hr {
+            border: none;
+            border-top: 1px solid lime;
+            margin: 10px 0;
+        }
+        ::-webkit-scrollbar {
+            width: 12px;
+            background: linear-gradient(to bottom, rgb(0, 0, 0), red);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, rgb(60, 255, 0), rgb(255, 255, 255));
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Automated Futures Trading Calculator</h1>
+        
+        <!-- Form for setting initial parameters -->
+        <form method="post" action="/">
+            <h2>Set Initial Parameters</h2>
+            <label for="buying_power">Buying Power:</label>
+            <input type="number" id="buying_power" name="buying_power" required value="{{ session.get('buying_power', session.get('saved_buying_power', '')) }}">
+            <label for="risk">Risk:</label>
+            <input type="number" step="any" id="risk" name="risk" required value="{{ session.get('risk', session.get('saved_risk', '')) }}">
+            <button type="submit" name="set_params">Set Parameters</button>
+            <button type="submit" name="save_params">Save Parameters</button>
+        </form>
+        
+        <!-- Display currently set parameters -->
+        {% if session.get('buying_power') or session.get('saved_buying_power') %}
+            <div class="output">
+                <p><strong>Current Buying Power:</strong> {{ session.get('buying_power', session.get('saved_buying_power')) }}</p>
+                <p><strong>Current Risk:</strong> {{ session.get('risk', session.get('saved_risk')) }}</p>
+            </div>
+        {% endif %}
+        
+        <!-- Form for submitting trade data -->
+        <form method="post" action="/">
+            <h2>Trade Data</h2>
+            <label for="entry_price">Entry Price:</label>
+            <input type="number" step="any" id="entry_price" name="entry_price" required>
+            <label for="stop_price">Stop Price:</label>
+            <input type="number" step="any" id="stop_price" name="stop_price" required>
+            <label for="ticker">Ticker:</label>
+            <input type="text" id="ticker" name="ticker" required>
+            <button type="submit">Calculate</button>
+        </form>
+
+        {% if data %}
+        <div class="output">
+            <hr class="styled-hr">
+            <p><strong>Ticker:</strong> {{ data.ticker }}</p>
+            <p><strong>Contracts Required:</strong> {{ data.contracts_required }}</p>
+            <hr class="styled-hr">
+            <p><strong>Stop:</strong> {{ data.stop }}</p>
+            <p><strong>Entry:</strong> {{ data.entry }}</p>
+            <p><strong>Target 1:</strong> {{ data.target1 }}</p>
+            <p><strong>Target 2:</strong> {{ data.target2 }}</p>
+            <hr class="styled-hr">
+            <p><strong>Risk per Contract:</strong> {{ data.risk_per_contract }}</p>
+            <p><strong>Actual Risk Exposure:</strong> {{ data.actual_risk_exposure }}</p>
+            <hr class="styled-hr">
+            <p><strong>Price per Contract:</strong> {{ data.price_per_contract }}</p>
+            <p><strong>Margin Ratio:</strong> {{ data.margin_ratio }}</p>
+            <p><strong>Cost of Contracts:</strong> {{ data.cost_of_contracts }}</p>
+            <p><strong>Leveraged Buying Power:</strong> {{ data.leveraged_buying_power }}</p>
+            <p><strong>Leverage to Cost Ratio<br>(if LTC>1=LowerNumContracts):</strong> {{ data.leverage_to_cost_ratio }}</p>
+            <hr class="styled-hr">
+        </div>
+        {% endif %}
+
+        {% if error %}
+            <p style="color:red;">{{ error }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>

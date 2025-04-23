@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candle Project</title>
+    <style>
+        body {
+            background-color: black;
+            color: lime;
+            font-family: monospace;
+            padding: 20px;
+            font-size: large;
+        }
+
+        h1 {
+            color: lime;
+        }
+
+        form {
+            margin-top: 20px;
+        }
+
+        label {
+            color: lime;
+        }
+
+        input[type="text"], button {
+            background-color: black;
+            color: lime;
+            border: 1px solid lime;
+            padding: 5px;
+            margin-right: 10px;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        img {
+            margin-top: 20px;
+            display: block;
+            width: 100%;
+            height: auto;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: gray;
+        }
+
+        p.error {
+            color: red;
+            font-weight: bold;
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+            background: linear-gradient(to bottom, rgb(0, 0, 0), red);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, rgb(60, 255, 0), rgb(255, 255, 255));
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Candle Project</h1>
+    <form method="POST" action="/">
+        <label for="ticker">Enter Ticker Symbol:</label>
+        <input type="text" id="ticker" name="ticker" placeholder="e.g., TSLA">
+        <button type="submit">Submit</button>
+    </form>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    {% if plot_data %}
+        <img src="data:image/png;base64,{{ plot_data }}" alt="Candlestick Chart">
+    {% endif %}
+</body>
+</html>

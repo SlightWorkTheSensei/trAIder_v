@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trading Ticker Dashboard</title>
+    <style>
+        /* CSS Styles */
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .table-container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            background-color: #1c1c1e;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            color: #e0e0e0;
+        }
+
+        th,
+        td {
+            padding: 12px 20px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        th {
+            background-color: #2b2b2b;
+            font-size: 1rem;
+            color: #e0e0e0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        td {
+            font-size: 0.9rem;
+            background-color: #1c1c1e;
+            color: #ffffff;
+            transition: background-color 0.3s, color 0.3s;
+            position: relative;
+        }
+
+        td:hover {
+            background-color: #333;
+            cursor: pointer;
+            color: #00ff99;
+        }
+
+        .popup {
+            position: absolute;
+            display: none;
+            padding: 10px;
+            border: 1px solid #444;
+            background-color: #2a2a2a;
+            color: #00ff99;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 100;
+            font-size: 0.85rem;
+        }
+
+        .popup strong {
+            color: #00e676;
+            display: block;
+            margin-bottom: 4px;
+            font-size: 1rem;
+        }
+
+        .popup span {
+            display: inline-block;
+            width: 100%;
+            font-size: 0.8rem;
+        }
+
+        .fetch-button,
+        .sort-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            color: #fff;
+            background-color: #00e613;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .fetch-button:hover,
+        .sort-button:hover {
+            background-color: #00e613;
+        }
+
+        /* Commitment-based color-coding */
+        .commitment-high {
+            background-color: #00e613; /* Green */
+            color: #000;
+        }
+
+        .commitment-medium {
+            background-color: #fffb09; /* Yellow */
+            color: #000;
+        }
+
+        .commitment-low {
+            background-color: #4a08ff; /* blue */
+            color: #fff;
+        }
+
+        .commitment-na {
+            background-color: #006eff6e; /* blue */
+            color: #fff;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Spinner styles */
+        .spinner {
+            display: none;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #00c853;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+
+        /* Keyframes for the spinner animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Overlay to dim the background while loading */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="button-container">
+        <button class="fetch-button" onclick="fetchData()">Fetch Data</button>
+        <button class="sort-button" onclick="sortTable('high-to-low')">Sort High to Low Commitment</button>
+        <button class="sort-button" onclick="sortTable('low-to-high')">Sort Low to High Commitment</button>
+    </div>
+    <div class="table-container">
+        <table id="ticker-table">
+            <thead>
+                <tr id="table-header">
+                    <th>Stocks</th>
+                    <th>Futures</th>
+                    <th>Crypto</th>
+                    <th>Forex</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <!-- The table body will be populated via JavaScript -->
+            </tbody>
+        </table>
+        <div id="popup" class="popup"></div>
+    </div>
+
+    <!-- Loading overlay and spinner -->
+    <div class="loading-overlay" id="loadingOverlay"></div>
+    <div class="spinner" id="spinner"></div>
+
+    <script>
+        let marketData = {{ market_data | tojson }};
+
+        function populateTable() {
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = '';
+
+            // Find the maximum length among all markets
+            const maxLength = Math.max(
+                marketData['stocks'].length || 0,
+                marketData['futures'].length || 0,
+                marketData['crypto'].length || 0,
+                marketData['forex'].length || 0
+            );
+
+            for (let i = 0; i < maxLength; i++) {
+                const tr = document.createElement('tr');
+                ['stocks', 'futures', 'crypto', 'forex'].forEach(market => {
+                    const td = document.createElement('td');
+                    const data = marketData[market][i];
+                    if (data) {
+                        const ticker = data.ticker || '';
+                        const price = data.price || 'N/A';
+                        const volume = data.volume || 'N/A';
+                        const avgVolume = data.avg_volume || 'N/A';
+                        const commitment = data.commitment || 'N/A';
+
+                        td.textContent = ticker;
+                        td.setAttribute('data-ticker', ticker);
+                        td.setAttribute('data-price', price);
+                        td.setAttribute('data-volume', volume);
+                        td.setAttribute('data-avgVolume', avgVolume);
+                        td.setAttribute('data-commitment', commitment);
+
+                        td.onmouseover = function (event) {
+                            showPopup(event, ticker, price, volume, avgVolume, commitment);
+                        };
+                        td.onmouseout = hidePopup;
+
+                        // Apply color coding based on commitment value
+                        if (commitment !== 'N/A' && commitment !== undefined) {
+                            const commitmentValue = parseFloat(commitment);
+                            if (commitmentValue > 2.5) {
+                                td.classList.add('commitment-high');
+                            } else if (commitmentValue > 0.50) {
+                                td.classList.add('commitment-medium');
+                            } else {
+                                td.classList.add('commitment-low');
+                            }
+                        } else {
+                            td.classList.add('commitment-na');
+                        }
+                    } else {
+                        td.textContent = '';
+                    }
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            }
+        }
+
+        populateTable();
+
+        function fetchData() {
+            showLoading();
+            fetch('/fetch-data', {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    marketData = data.market_data;
+                    populateTable();
+                    hideLoading();
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    hideLoading();
+                });
+        }
+
+        function showPopup(event, ticker, price, volume, avgVolume, commitment) {
+            const popup = document.getElementById('popup');
+            price = isNaN(parseFloat(price)) ? 'N/A' : parseFloat(price).toFixed(2);
+            volume = isNaN(parseFloat(volume)) ? 'N/A' : parseFloat(volume).toFixed(2);
+            avgVolume = isNaN(parseFloat(avgVolume)) ? 'N/A' : parseFloat(avgVolume).toFixed(2);
+            commitment = isNaN(parseFloat(commitment)) ? 'N/A' : parseFloat(commitment).toFixed(2);
+
+            popup.innerHTML = `<strong>${ticker}</strong>
+                       <span>Price: ${price}</span><br>
+                       <span>Volume: ${volume}</span><br>
+                       <span>Avg Volume: ${avgVolume}</span><br>
+                       <span>Commitment: ${commitment}</span>`;
+            popup.style.display = 'block';
+            popup.style.left = event.pageX + 15 + 'px';
+            popup.style.top = event.pageY + 15 + 'px';
+        }
+
+        function hidePopup() {
+            const popup = document.getElementById('popup');
+            popup.style.display = 'none';
+        }
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'block';
+            document.getElementById('spinner').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('spinner').style.display = 'none';
+        }
+
+        function sortTable(order) {
+            ['stocks', 'futures', 'crypto', 'forex'].forEach(market => {
+                marketData[market].sort((a, b) => {
+                    const aCommitment = parseFloat(a.commitment);
+                    const bCommitment = parseFloat(b.commitment);
+
+                    const aIsNaN = isNaN(aCommitment);
+                    const bIsNaN = isNaN(bCommitment);
+
+                    if (aIsNaN && bIsNaN) return 0;
+                    if (aIsNaN) return 1;
+                    if (bIsNaN) return -1;
+
+                    return order === 'high-to-low' ? bCommitment - aCommitment : aCommitment - bCommitment;
+                });
+            });
+            populateTable();
+        }
+    </script>
+</body>
+</html>

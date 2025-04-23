@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Backtest</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Backtest Summary</h2>
+        <div class="card">
+            <div class="card-body">
+                <div class="table-container">
+                    <table id="resultsTable" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)">Interval</th>
+                                <th onclick="sortTable(1)">Stop Loss</th>
+                                <th onclick="sortTable(2)">Reward</th>
+                                <th onclick="sortTable(3)">Risk</th>
+                                <th onclick="sortTable(4)">Trade Type</th>
+                                <th onclick="sortTable(5)">Total Trades</th>
+                                <th onclick="sortTable(6)">Winning Trades</th>
+                                <th onclick="sortTable(7)">Losing Trades</th>
+                                <th onclick="sortTable(8)">Neutral Trades</th>
+                                <th onclick="sortTable(9)">Batting Average</th>
+                                <th onclick="sortTable(10)">Gross Profit</th>
+                                <th onclick="sortTable(11)">Gross Loss</th>
+                                <th onclick="sortTable(12)">Unrealized Gain</th>
+                                <th onclick="sortTable(13)">Unrealized Loss</th>
+                                <th onclick="sortTable(14)">Net Profit/Loss (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in results %}
+                            <tr onclick="displayStatement(this, {{ loop.index0 }})">
+                                <td>{{ result.interval }}</td>
+                                <td>{{ result.stop_loss }}</td>
+                                <td>{{ result.reward }}</td>
+                                <td>{{ result.risk }}</td>
+                                <td>{{ result.trade_type }}</td>
+                                <td>{{ result.total_trades }}</td>
+                                <td>{{ result.win_trades }}</td>
+                                <td>{{ result.loss_trades }}</td>
+                                <td>{{ result.neutral_trades }}</td>
+                                <td>{{ result.batting_average }}</td>
+                                <td>{{ result.gross_profit }}</td>
+                                <td>{{ result.gross_loss }}</td>
+                                <td>{{ result.unrealized_gain }}</td>
+                                <td>{{ result.unrealized_loss }}</td>
+                                <td>{{ result.net_profit_loss_percentage }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-controls">
+                    <button id="showMoreBtn" class="btn btn-primary" onclick="showMoreRows()">Show More</button>
+                    <button id="showAllBtn" class="btn btn-secondary" onclick="showAllRows()">Show All</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="sideMenu" class="side-menu">
+            <div class="close-btn" id="closeSideMenu">&times;</div>
+            <p id="statement">Click on a row to see the trade statement.</p>
+            <div id="performanceChart" class="chart-container"></div>
+
+            {% for chart in charts %}
+            <h3>{{ chart[0] }} Interval</h3>
+            <div class="chart-container">
+                <div>{{ chart[1]|safe }}</div>
+            </div>
+            <div class="chart-container">
+                <div>{{ chart[2]|safe }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <a href="/" class="btn btn-primary btn-block">Go Back</a>
+    </div>
+
+    <script>
+        let sortStates = []; // Array to store sort states for each column
+        let currentVisibleRows = 10;
+    
+        function sortTable(columnIndex) {
+            const table = document.getElementById('resultsTable');
+            let rows = Array.from(table.rows).slice(1); // Exclude the header row
+    
+            // Initialize sort states for columns if not already done
+            if (sortStates.length === 0) {
+                for (let i = 0; i < table.rows[0].cells.length; i++) {
+                    sortStates.push(null); // Initialize with null (no sort)
+                }
+            }
+    
+            // Toggle sort direction
+            if (sortStates[columnIndex] === "asc") {
+                sortStates[columnIndex] = "desc";
+            } else {
+                sortStates[columnIndex] = "asc";
+            }
+    
+            // Perform the sorting
+            rows.sort((a, b) => {
+                let x = a.cells[columnIndex].innerText;
+                let y = b.cells[columnIndex].innerText;
+    
+                if (!isNaN(parseFloat(x)) && !isNaN(parseFloat(y))) {
+                    x = parseFloat(x);
+                    y = parseFloat(y);
+                }
+    
+                if (sortStates[columnIndex] === "asc") {
+                    return x > y ? 1 : x < y ? -1 : 0;
+                } else {
+                    return x < y ? 1 : x > y ? -1 : 0;
+                }
+            });
+    
+            // Apply sorted rows to the table
+            rows.forEach(row => table.tBodies[0].appendChild(row));
+    
+            // Reapply existing sort orders for previously sorted columns
+            for (let i = 0; i < sortStates.length; i++) {
+                if (i !== columnIndex && sortStates[i]) {
+                    const currentDir = sortStates[i];
+                    rows.sort((a, b) => {
+                        let x = a.cells[i].innerText;
+                        let y = b.cells[i].innerText;
+    
+                        if (!isNaN(parseFloat(x)) && !isNaN(parseFloat(y))) {
+                            x = parseFloat(x);
+                            y = parseFloat(y);
+                        }
+    
+                        if (currentDir === "asc") {
+                            return x > y ? 1 : x < y ? -1 : 0;
+                        } else {
+                            return x < y ? 1 : x > y ? -1 : 0;
+                        }
+                    });
+    
+                    rows.forEach(row => table.tBodies[0].appendChild(row));
+                }
+            }
+    
+            // Update the header classes
+            updateHeaderClasses(columnIndex);
+        }
+    
+        function updateHeaderClasses(columnIndex) {
+            const headers = document.getElementById('resultsTable').getElementsByTagName("th");
+            for (let j = 0; j < headers.length; j++) {
+                headers[j].classList.remove("active");
+                headers[j].classList.remove("desc");
+                if (sortStates[j]) {
+                    headers[j].classList.add("active");
+                    if (sortStates[j] === "desc") {
+                        headers[j].classList.add("desc");
+                    }
+                }
+            }
+            headers[columnIndex].classList.add("active");
+        }
+    
+        function displayStatement(row, index) {
+            const cells = row.getElementsByTagName('td');
+            const interval = cells[0].innerText;
+            const stopLoss = cells[1].innerText;
+            const rewardRisk = `${cells[2].innerText}:${cells[3].innerText}`;
+            const netProfitLoss = cells[14].innerText;
+            const totalTrades = cells[5].innerText;
+            const battingAverage = cells[9].innerText;
+    
+            const statement = `For the interval ${interval}, using a stop loss of $${stopLoss} with a reward-to-risk ratio of ${rewardRisk}, and ${totalTrades} total trades, you achieved a batting average of ${battingAverage} and a net profit/loss of ${netProfitLoss}.`;
+            document.getElementById('statement').innerText = statement;
+    
+            // Highlight the clicked row
+            const rows = document.getElementById('resultsTable').getElementsByTagName('tr');
+            for (let i = 1; i < rows.length; i++) {
+                rows[i].classList.remove('highlight');
+            }
+            row.classList.add('highlight');
+    
+            // Open the side menu
+            document.getElementById('sideMenu').classList.add('open');
+    
+            // Fetch performance data
+            fetch(`/performance/${index}`, {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const performanceData = {
+                    x: [...Array(data.length).keys()],
+                    y: data,
+                    type: 'scatter'
+                };
+                const layout = {
+                    title: 'Performance Over Time',
+                    xaxis: { title: 'Time' },
+                    yaxis: { title: 'Account Value' }
+                };
+                Plotly.newPlot('performanceChart', [performanceData], layout);
+            });
+        }
+    
+        function showMoreRows() {
+            const rows = document.getElementById('resultsTable').getElementsByTagName('tr');
+            for (let i = currentVisibleRows; i < currentVisibleRows + 10 && i < rows.length; i++) {
+                rows[i].style.display = '';
+            }
+            currentVisibleRows += 10;
+            if (currentVisibleRows >= rows.length - 1) {
+                document.getElementById('showMoreBtn').style.display = 'none';
+            }
+        }
+    
+        function showAllRows() {
+            const rows = document.getElementById('resultsTable').getElementsByTagName('tr');
+            for (let i = 1; i < rows.length; i++) {
+                rows[i].style.display = '';
+            }
+            currentVisibleRows = rows.length - 1;
+            document.getElementById('showMoreBtn').style.display = 'none';
+            document.getElementById('showAllBtn').style.display = 'none';
+        }
+    
+        document.addEventListener('DOMContentLoaded', () => {
+            const rows = document.getElementById('resultsTable').getElementsByTagName('tr');
+            for (let i = 11; i < rows.length; i++) {
+                rows[i].style.display = 'none';
+            }
+    
+            document.getElementById('closeSideMenu').addEventListener('click', () => {
+                document.getElementById('sideMenu').classList.remove('open');
+            });
+        });
+    </script>
+    
+</body>
+
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Global Sunlight Map & Market Data</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+            font-family: 'Courier New', Courier, monospace;
+            transform: scale(0.75);
+            transform-origin: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: #00e6e6;
+            text-shadow: 0 0 10px #00e6e6, 0 0 20px #00e6e6;
+            margin-bottom: 20px;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            border: 2px solid #00e6e6;
+            box-shadow: 0 0 20px #00e6e6, 0 0 40px #00e6e6;
+        }
+
+        #clock {
+            font-size: 5.5rem;
+            color: #00e6e6;
+            text-shadow: 0 0 10px #00e6e6, 0 0 20px #00e6e6;
+            margin-top: 20px;
+            margin-bottom: 75px;
+        }
+
+        #controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: #00e6e6;
+            border: none;
+            color: black;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #009999;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="clock"></div>
+    <div id="map"></div>
+
+    <div id="controls">
+        <button onclick="updateMap()">Update Map</button>
+    </div>
+
+    <script>
+        let simulatedHour = new Date().getUTCHours();
+
+        // Update the real-time clock
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+            const timeString = `${hours}:${minutes}:${seconds}:${milliseconds}`;
+            document.getElementById('clock').textContent = timeString;
+        }
+
+        setInterval(updateClock, 100); // Update the clock every 1 ms
+
+        // Function to calculate sunlight regions using a specific hour (for simulation)
+        function getSunStatus(lat, lon, hourOffset = 0) {
+            const now = new Date();
+            const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+            const hours = simulatedHour + hourOffset + now.getUTCMinutes() / 60;
+            const declination = 23.44 * Math.cos((2 * Math.PI / 365) * (dayOfYear - 172));
+            const solarTime = (hours + lon / 15) % 24;
+            const hourAngle = (solarTime - 12) * 15;
+            const solarZenith = Math.acos(Math.sin(lat * Math.PI / 180) * Math.sin(declination * Math.PI / 180) +
+                Math.cos(lat * Math.PI / 180) * Math.cos(declination * Math.PI / 180) *
+                Math.cos(hourAngle * Math.PI / 180)) * 180 / Math.PI;
+
+            return solarZenith < 90 ? 1 : 0; // Day if zenith angle < 90 degrees, else night
+        }
+
+        // Function to update the map with market data and day/night cycle
+        function updateMap() {
+            const countries = [
+                'United States (New York)', 'United States (Chicago)', 'Canada', 'Brazil', 'Argentina', 'Chile',
+                'Western Russia', 'Central Russia', 'Eastern Russia',
+                'India', 'China', 'Japan', 'South Korea',
+                'Australia', 'New Zealand',
+                'South Africa', 'Egypt', 'Nigeria', 'Kenya', 'Ethiopia',
+                'Morocco', 'Algeria', 'Ghana', 'Tanzania', 'Uganda',
+                'Congo (Kinshasa)', 'Angola', 'Zimbabwe', 'Botswana',
+                'Sudan', 'Mali', 'Ivory Coast', 'Cameroon', 'Senegal',
+                'Saudi Arabia', 'Iran', 'Iraq', 'Israel', 'Turkey',
+                'Jordan', 'Syria', 'Lebanon', 'United Arab Emirates',
+                'Oman', 'Qatar', 'Kuwait', 'Yemen',
+                'United Kingdom', 'Germany', 'France', 'Italy', 'Spain',
+                'Netherlands', 'Belgium', 'Poland', 'Sweden', 'Norway',
+                'Switzerland', 'Austria', 'Greece', 'Portugal', 'Denmark',
+                'Ireland', 'Finland', 'Czech Republic', 'Hungary', 'Romania'
+            ];
+
+            const latitudes = [
+                40.7128, 41.8781, 45.4215, -23.5505, -34.6037, -33.4489,
+                55.7558, 60.0000, 66.0000,
+                28.6139, 35.8617, 35.6762, 37.5665,
+                -25.2744, -40.9006,
+                -30.5595, 26.8206, 9.0820, -1.2921, 9.1450,
+                31.7917, 28.0339, 7.9465, -6.3690, 1.3733,
+                -4.0383, -11.2027, -19.0154, -22.3285,
+                15.5007, 17.5707, 7.539989, 5.6037, 14.4974,
+                23.8859, 32.4279, 33.2232, 31.0461, 39.9334,
+                31.9454, 34.8021, 33.8547, 23.4241,
+                21.5126, 25.3548, 29.3759, 15.5527,
+                51.5074, 52.5200, 48.8566, 41.9028, 40.4168,
+                52.3676, 50.8503, 51.9194, 59.3293, 59.9139,
+                46.8182, 47.5162, 37.9838, 38.7223, 55.6761,
+                53.3498, 60.1699, 50.0755, 47.1625, 45.9432
+
+            ];
+
+            const longitudes = [
+                -74.0060, -87.6298, -97.6298, -75.6972, -46.6333, -58.3816, -70.6483,
+                37.6173, 82.9000, 135.0000,
+                77.2090, 104.1954, 139.6503, 126.9780,
+                133.7751, 174.8859,
+                22.9375, 30.8024, 8.6753, 36.8219, 40.4897,
+                -7.0926, 1.6596, -1.0232, 34.8888, 32.2903,
+                15.8277, 17.8739, 29.1549, 25.5920,
+                32.5599, -3.9962, -5.5471, 12.3547, -14.4524,
+                45.0792, 53.6880, 43.6793, 34.8516, 32.8597,
+                35.9284, 38.9968, 35.8623, 53.8478,
+                55.9233, 51.1839, 47.4818, 48.5164,
+                -0.1276, 13.4050, 2.3522, 12.4964, -3.7038,
+                4.9041, 4.3517, 19.1451, 18.0686, 10.7522,
+                8.2275, 14.5501, 23.7275, -9.1393, 12.5683
+
+            ];
+            const hoverTexts = [
+                "New York: SPY",
+                "Chicago: MNQ"
+            ];
+
+
+            // Calculate sunlight status for each country (1 for day, 0 for night)
+            const sunStatus = [];
+            for (let i = 0; i < countries.length; i++) {
+                sunStatus.push(getSunStatus(latitudes[i], longitudes[i]));
+            }
+
+            // Fetch market data and display both market data and sunlight status
+            fetch('/data')
+                .then(response => response.json())
+                .then(data => {
+                    const countriesWithMarketData = data.map(d => d.Country);
+                    const priceChanges = data.map(d => d['Percentage Change']);
+                    const hoverTexts = data.map(d => `
+                <b>${d.Ticker}</b><br>
+                Price Change: ${d['Price Change']}<br>
+                Volume: ${d.Volume}<br>
+                Current Price: ${d['Current Price']}
+            `);
+                    const markerColors = priceChanges.map(change => change > 0 ? 'lime' : 'red');
+
+                    // Adjust the size of the nodes based on the market data
+                    const nodeSizes = priceChanges.map(change => Math.abs(change) * 25);  // Adjust multiplier for larger/smaller nodes
+
+                    const plot_data = [{
+                        type: 'choropleth',
+                        locationmode: 'country names',
+                        locations: countries,
+                        text: hoverTexts,  // Labels for NY and Chicago
+                        z: sunStatus,
+                        colorscale: [
+                            [0, 'rgb(0, 0, 102)'],  // Night: Dark Blue
+                            [1, '#00e6e6']  // Day: Bright Cyan
+                        ],
+                        showscale: false,  // Hide color scale for simplicity
+                        marker: {
+                            line: {
+                                color: '#00e6e6',
+                                width: 1
+                            }
+                        }
+                    }, {
+                        type: 'scattergeo',
+                        locationmode: 'country names',
+                        locations: countriesWithMarketData,
+                        text: hoverTexts,
+                        marker: {
+                            size: nodeSizes,  // Dynamic node size
+                            color: markerColors,
+                            line: { color: '#000', width: 1 }
+                        }
+                    }];
+
+                    const layout = {
+                        geo: {
+                            projection: { type: 'equirectangular' },
+                            showcoastlines: true,
+                            coastlinecolor: '#00e6e6',
+                            showland: true,
+                            landcolor: 'rgb(10, 10, 10)',
+                            showocean: true,
+                            oceancolor: 'rgb(0, 0, 102)',
+                            bgcolor: '#000000',
+                            showframe: false
+                        },
+                        paper_bgcolor: '#000000',
+                        plot_bgcolor: '#000000',
+                        margin: { l: 0, r: 0, t: 0, b: 0 }
+                    };
+
+                    Plotly.newPlot('map', plot_data, layout);
+                });
+        }
+
+    </script>
+</body>
+
+</html>

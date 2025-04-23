@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Performance Comparison</title>
+    <!-- Include Chart.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1c1c1e 0%, #383838 100%);
+            margin: 0;
+            padding: 20px;
+            color: #ff00ff;
+        }
+        select, input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 1.2em;
+            color: #00ff9d;
+            background: transparent;
+            border: 2px solid #00ff9d91;
+            border-radius: 10px;
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 157, 0.5), 0 0 20px rgba(0, 255, 157, 0.5);
+            transition: box-shadow 0.4s ease, transform 0.3s ease;
+        }
+        h1 {
+            font-size: 2em;
+            color: #ff00ff;
+            text-shadow: 0px 0px 20px #ff00ff, 0px 0px 40px #ff00ff, 0px 0px 60px #ff00ff;
+            animation: glow 2s ease-in-out infinite alternate;
+            margin-bottom: 30px;
+        }
+        #controls {
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+        button {
+            padding: 15px 30px;
+            margin-top: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #000000;
+            background: #ff00ff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0px 0px 10px #ff00ff, 0px 0px 20px #ff00ff, 0px 0px 30px #ff00ff;
+            transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+        }
+        button:hover {
+            background: #00ff9d;
+            box-shadow: 0px 0px 20px #00ff9d, 0px 0px 40px #00ff9d, 0px 0px 60px #00ff9d;
+            transform: scale(1.05);
+        }
+        #controls button, #controls input, #controls select {
+            padding: 10px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        #controls button {
+            cursor: pointer;
+            background-color: #00ff9da6;
+            color: #fff;
+            border: none;
+            transition: background-color 0.3s;
+        }
+        #controls button:hover {
+            background-color: #ff00ff;
+        }
+        #chart-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .chart-wrapper {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+            height: 2000px; /* Set a fixed height */
+        }
+        canvas {
+            background-color: #000000;
+            border: 1px solid #00ff9d;
+            border-radius: 8px;
+            height: 2%; /* Ensure the canvas fills the wrapper */
+        }
+    </style>
+</head>
+<body>
+    <h1>Performance Comparison <button onclick="window.location.href='/'">Home</button></h1>
+
+    <div id="controls">
+        <label for="tickerSelect">Select Ticker:</label>
+        <select id="tickerSelect" onchange="populateFileSelect()">
+            <!-- Ticker options will be populated dynamically -->
+        </select>
+
+        <label for="fileSelect">Select File:</label>
+        <select id="fileSelect" onchange="loadDataFile()">
+            <!-- File options will be populated dynamically -->
+        </select>
+
+        <label>Min Stop Loss Size: <input type="number" id="minStopLoss" value="0"></label>
+        <label>Min % Difference: <input type="number" id="minFilter" value="-100"></label>
+        <label>Max % Difference: <input type="number" id="maxFilter" value="100"></label>
+        <button onclick="applyFilter()">Apply Filter</button>
+        <button onclick="sortBars('asc')">Sort: UNDER to OVER</button>
+        <button onclick="sortBars('desc')">Sort: OVER to UNDER</button>
+    </div>
+
+    <div id="chart-container">
+        <div class="chart-wrapper">
+            <canvas id="percentDiffChart"></canvas>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="zScoreChart"></canvas>
+        </div>
+    </div>
+
+    <!-- The JavaScript code will be updated below -->
+    <script>
+        let barData = [];
+        let filteredData = [];
+        let percentDiffChartInstance = null;
+        let zScoreChartInstance = null;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            fetchTickers();
+        });
+
+        // Fetch list of tickers and populate tickerSelect dropdown
+        function fetchTickers() {
+            fetch('/get_tickers')
+                .then(response => response.json())
+                .then(data => {
+                    const tickerSelect = document.getElementById('tickerSelect');
+                    tickerSelect.innerHTML = ''; // Clear existing options
+                    for (const [ticker, files] of Object.entries(data.tickers)) {
+                        const option = document.createElement('option');
+                        option.value = ticker;
+                        option.textContent = ticker;
+                        tickerSelect.appendChild(option);
+                    }
+                    populateFileSelect();
+                });
+        }
+
+        // Populate fileSelect based on selected ticker
+        function populateFileSelect() {
+            const ticker = document.getElementById('tickerSelect').value;
+            fetch(`/get_tickers`)
+                .then(response => response.json())
+                .then(data => {
+                    const fileSelect = document.getElementById('fileSelect');
+                    fileSelect.innerHTML = ''; // Clear existing options
+                    const files = data.tickers[ticker] || [];
+                    files.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file;
+                        option.textContent = file;
+                        fileSelect.appendChild(option);
+                    });
+                    loadDataFile(); // Load the first file by default
+                });
+        }
+
+        // Load and parse data from selected file
+        function loadDataFile() {
+            const ticker = document.getElementById('tickerSelect').value;
+            const filename = document.getElementById('fileSelect').value;
+            fetch(`/get_file/${ticker}/${filename}`)
+                .then(response => response.text())
+                .then(data => {
+                    barData = []; // Reset existing data
+                    const rows = data.trim().split("\n").slice(1); // Remove headers
+                    rows.forEach(row => {
+                        if (!row.trim()) return;
+                        const columns = row.split(",");
+
+                        // Adjusted indices based on your CSV columns
+                        const stopLoss = parseFloat(columns[0]);
+                        const rewardRatio = parseFloat(columns[1]);
+                        const position = columns[2];
+                        const interval = columns[3];
+                        const numTradesParent = parseInt(columns[4]);
+                        const netProfitParent = parseFloat(columns[5]);
+                        const battingAvgParent = parseFloat(columns[6]);
+                        const numTradesChild = parseInt(columns[7]);
+                        const netProfitChild = parseFloat(columns[8]);
+                        const battingAvgChild = parseFloat(columns[9]);
+                        const parentConfidenceInterval = columns[10]; // This might need parsing
+                        const zScore = parseFloat(columns[11]);
+                        const performance = columns[12].trim();
+
+                        // Calculate percent difference
+                        const percentDiff = ((battingAvgChild - battingAvgParent) / Math.abs(battingAvgParent)) * 100;
+
+                        const label = `${stopLoss}-${rewardRatio}-${position}-${interval}`;
+                        barData.push({ percentDiff, performance, stopLoss, label, zScore });
+                    });
+                    applyFilter(); // Re-render charts with new data
+                })
+                .catch(error => console.error("Error loading file:", error));
+        }
+
+        // Color mapping function for Z-Scores
+        function getColorForZScore(zScore, minZ, maxZ) {
+            // Normalize the zScore between 0 and 1
+            const normalized = (maxZ - minZ) === 0 ? 0 : (zScore - minZ) / (maxZ - minZ);
+
+            // Define color stops
+            // 0.0 - Dark Blue (240 degrees hue)
+            // 0.5 - Light Blue (180 degrees hue)
+            // 0.75 - Yellow (60 degrees hue)
+            // 1.0 - Orange (30 degrees hue)
+
+            let hue;
+            if (normalized <= 0.5) {
+                // From Dark Blue (240) to Light Blue (180)
+                hue = 240 - (normalized / 0.5) * 60;
+            } else if (normalized <= 0.75) {
+                // From Light Blue (180) to Yellow (60)
+                hue = 180 - ((normalized - 0.5) / 0.25) * 120;
+            } else {
+                // From Yellow (60) to Orange (30)
+                hue = 60 - ((normalized - 0.75) / 0.25) * 30;
+            }
+
+            // Use full saturation and lightness
+            return `hsl(${hue}, 100%, 50%)`;
+        }
+
+        // Render charts with filtered data
+        function renderCharts() {
+    const percentDiffCtx = document.getElementById('percentDiffChart').getContext('2d');
+    const zScoreCtx = document.getElementById('zScoreChart').getContext('2d');
+
+    // Destroy existing charts if present
+    if (percentDiffChartInstance) {
+        percentDiffChartInstance.destroy();
+    }
+    if (zScoreChartInstance) {
+        zScoreChartInstance.destroy();
+    }
+
+    const percentDiffValues = filteredData.map(d => d.percentDiff);
+    const zScoreValues = filteredData.map(d => d.zScore);
+
+    // Adjust chart wrapper height based on the number of bars
+    const totalBars = filteredData.length;
+    const heightPerBar = 30; // You can adjust this value
+    const minHeight = 200;
+    const maxHeight = 2000;
+    const newHeight = Math.min(maxHeight, Math.max(minHeight, totalBars * heightPerBar));
+
+    // Set the height of the chart-wrapper elements
+    const chartWrappers = document.querySelectorAll('.chart-wrapper');
+    chartWrappers.forEach(wrapper => {
+        wrapper.style.height = newHeight + 'px';
+    });
+
+    // Find min and max Z-Score for normalization
+    const minZ = Math.min(...zScoreValues);
+    const maxZ = Math.max(...zScoreValues);
+
+    // Generate colors for Z-Score bars
+    const zScoreColors = zScoreValues.map(zScore => getColorForZScore(zScore, minZ, maxZ));
+
+    // Generate colors for Percent Difference bars based on positive or negative values
+    const percentDiffColors = filteredData.map(d => d.percentDiff >= 0 ? '#4CAF50' : '#f44336');
+    const percentDiffHoverColors = filteredData.map(d => d.percentDiff >= 0 ? '#388E3C' : '#d32f2f');
+
+    // Data for Percent Difference Chart
+    const percentDiffData = {
+        labels: filteredData.map(() => ''), // Hide labels
+        datasets: [{
+            label: 'Percent Difference (%)',
+            data: percentDiffValues,
+            backgroundColor: percentDiffColors,
+            hoverBackgroundColor: percentDiffHoverColors,
+            borderWidth: 1
+        }]
+    };
+
+    // Data for Z-Score Chart
+    const zScoreData = {
+        labels: filteredData.map(() => ''), // Hide labels
+        datasets: [{
+            label: 'Z-Score',
+            data: zScoreValues,
+            backgroundColor: zScoreColors,
+            hoverBackgroundColor: zScoreColors,
+            borderWidth: 1
+        }]
+    };
+
+    // Options common to both charts
+    const commonOptions = {
+        indexAxis: 'y', // Horizontal bars
+        responsive: true,
+        maintainAspectRatio: false, // Allow chart to fill the container
+        scales: {
+            x: {
+                beginAtZero: true,
+                title: { display: true, text: '' }
+            },
+            y: { display: false }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: (context) => {
+                        const dataPoint = filteredData[context.dataIndex];
+                        return [
+                            `Parameters: ${dataPoint.label}`,
+                            `Percent Difference: ${dataPoint.percentDiff.toFixed(2)}%`,
+                            `Z-Score: ${dataPoint.zScore.toFixed(2)}`,
+                            `Performance: ${dataPoint.performance}`
+                        ];
+                    }
+                }
+            },
+            legend: { display: false }
+        },
+        onClick: (e, elements) => {
+            if (elements.length > 0) {
+                const dataPoint = filteredData[elements[0].index];
+                alert(
+                    `Parameters: ${dataPoint.label}\n` +
+                    `Percent Difference: ${dataPoint.percentDiff.toFixed(2)}%\n` +
+                    `Z-Score: ${dataPoint.zScore.toFixed(2)}\n` +
+                    `Performance: ${dataPoint.performance}`
+                );
+            }
+        }
+    };
+
+    // Render Percent Difference Chart
+    percentDiffChartInstance = new Chart(percentDiffCtx, {
+        type: 'bar',
+        data: percentDiffData,
+        options: {
+            ...commonOptions,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    min: -100,
+                    max: 100,
+                    title: { display: true, text: 'Percent Difference (%)' }
+                },
+                y: { display: false }
+            }
+        }
+    });
+
+    // Render Z-Score Chart
+    zScoreChartInstance = new Chart(zScoreCtx, {
+        type: 'bar',
+        data: zScoreData,
+        options: {
+            ...commonOptions,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Z-Score' }
+                },
+                y: { display: false }
+            }
+        }
+    });
+}
+
+
+        // Filter data based on user input
+        function applyFilter() {
+            const minFilter = parseFloat(document.getElementById("minFilter").value);
+            const maxFilter = parseFloat(document.getElementById("maxFilter").value);
+            const minStopLoss = parseFloat(document.getElementById("minStopLoss").value);
+
+            filteredData = barData.filter(d =>
+                d.percentDiff >= minFilter &&
+                d.percentDiff <= maxFilter &&
+                d.stopLoss >= minStopLoss
+            );
+            renderCharts();
+        }
+
+        // Sort data by percent difference
+        function sortBars(order) {
+            filteredData.sort((a, b) => order === 'asc' ? a.percentDiff - b.percentDiff : b.percentDiff - a.percentDiff);
+            renderCharts();
+        }
+    </script>
+
+</body>
+</html>

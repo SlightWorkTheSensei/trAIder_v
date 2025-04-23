@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Backtest Results for {{ ticker }}</title>
+    <style>
+        /* Dark Terminal Style */
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #1c1c1e;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        .container {
+            width: 95%;
+            overflow: hidden;
+            border: 1px solid #444;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            background-color: #2c2c2e;
+            padding: 15px;
+        }
+
+        .filters {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #333;
+            border: 1px solid #444;
+            border-radius: 5px;
+        }
+
+        .filters label,
+        .filters input,
+        .filters button {
+            font-size: 14px;
+            color: #e0e0e0;
+        }
+
+        .filters input {
+            padding: 5px;
+            width: 80px;
+            background-color: #1e1e1e;
+            border: 1px solid #444;
+            color: #00ff9d;
+            border-radius: 5px;
+            outline: none;
+            box-shadow: 0 0 5px #00ff9d, 0 0 10px #00ff9d;
+            transition: box-shadow 0.3s ease, transform 0.3s ease;
+        }
+
+        .filters button {
+            padding: 8px 15px;
+            cursor: pointer;
+            background-color: #ff00ff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            box-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .scrollable-table {
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+
+        .table-headers {
+            display: flex;
+            width: 100%;
+            background-color: #3a3a3c;
+            color: #fff;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+
+        .table-section {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+        }
+
+        .table {
+            width: 33.33%;
+            border-collapse: collapse;
+            border-left: 4px solid #ff00ff;
+            border-right: 4px solid #ff00ff;
+        }
+
+        th {
+            background-color: #3a3a3c;
+            color: #ff00ff;
+            position: sticky;
+            top: 0;
+            padding: 10px;
+        }
+
+        td {
+            background-color: #1c1c1e;
+            color: #e0e0e0;
+            border: 1px solid #444;
+            padding: 6px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        /* Heatmap colors for Profit/Loss */
+        .profit-high {
+            background-color: #006400;
+            color: #fff;
+        }
+
+        .profit-medium {
+            background-color: #32cd32;
+            color: #000;
+        }
+
+        .profit-low {
+            background-color: #98fb98;
+            color: #000;
+        }
+
+        .loss-low {
+            background-color: #ffb6b6;
+            color: #000;
+        }
+
+        .loss-medium {
+            background-color: #ff6347;
+            color: #000;
+        }
+
+        .loss-high {
+            background-color: #8b0000;
+            color: #fff;
+        }
+
+        /* Performance */
+        .over-performing {
+            background-color: #32cd32;
+            color: #000;
+        }
+
+        .under-performing {
+            background-color: #ff6347;
+            color: #000;
+        }
+
+        .expected {
+            background-color: #fff9c4;
+            color: #000;
+        }
+
+        /* % Diff Color Coding */
+        .diff-high {
+            background-color: #006400;
+            color: #fff;
+        }
+
+        .diff-medium {
+            background-color: #32cd32;
+            color: #000;
+        }
+
+        .diff-low {
+            background-color: #98fb98;
+            color: #000;
+        }
+
+        .diff-negative-low {
+            background-color: #ffb6b6;
+            color: #000;
+        }
+
+        .diff-negative-medium {
+            background-color: #ff6347;
+            color: #000;
+        }
+
+        .diff-negative-high {
+            background-color: #8b0000;
+            color: #fff;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Popup Styles */
+        .popup {
+            position: absolute;
+            background-color: #2c2c2e;
+            color: #e0e0e0;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            z-index: 1000;
+            display: none;
+            max-width: 300px;
+            font-size: 14px;
+        }
+
+        /* Z-Score Heatmap */
+        .z-score-low {
+            background-color: #add8e6;
+            /* Light Blue */
+            color: #000;
+        }
+
+        .z-score-medium {
+            background-color: #ffffe0;
+            /* Light Yellow */
+            color: #000;
+        }
+
+        .z-score-high {
+            background-color: #ffa07a;
+            /* Light Salmon */
+            color: #000;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Filter Controls -->
+        <div class="filters">
+            <label for="minStopLoss">
+                Minimum Stop Loss:
+                <input type="number" id="minStopLoss" step="0.01" placeholder="0.1">
+            </label>
+            <label for="minBattingAvg">
+                Minimum Batting Average:
+                <input type="number" id="minBattingAvg" step="0.01" min="0" max="1" placeholder="0.5">
+            </label>
+            <label for="minNetProfit">
+                Minimum Net Profit:
+                <input type="number" id="minNetProfit" placeholder="0">
+            </label>
+            <button onclick="filterResults()">Filter Results</button>
+            <button onclick="resetFilter()">Reset Filter</button>
+            <button onclick="window.location.href='/bar'">Comparison Tool</button>
+        </div>
+
+        <!-- Popup Element -->
+        <div id="popup" class="popup"></div>
+
+        <!-- Unified Table Header Row -->
+        <div class="table-headers">
+            <div style="width: 33.33%; padding: 10px;">Parent Backtest Results</div>
+            <div style="width: 33.33%; padding: 10px;">Child Backtest Results</div>
+            <div style="width: 33.33%; padding: 10px;">Batting Avg Comparison</div>
+        </div>
+
+        <div class="scrollable-table">
+            <div class="table-section">
+                <!-- Parent Backtest Results Table -->
+                <table class="table" id="parentTable">
+                    <thead>
+                        <tr>
+                            <th>SL</th>
+                            <th>R:r</th>
+                            <th>L/S</th>
+                            <th>min</th>
+                            <th>Net P&L</th>
+                            <th>BA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in parent_results %}
+                        <tr data-row-index="{{ loop.index0 }}" data-details='{{ row | tojson | safe }}'>
+                            <td>{{ row['stop_loss']|round(2) }}</td>
+                            <td>{{ row['reward_ratio']|round(2) }}</td>
+                            <td>{{ row['position'] }}</td>
+                            <td>{{ row['interval'] }}</td>
+                            <td class="net-profit">{{ row['net_profit']|round(2) }}</td>
+                            <td class="batting-avg">{{ row['batting_avg']|round(4) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Child Backtest Results Table -->
+                <table class="table" id="childTable">
+                    <thead>
+                        <tr>
+                            <th>SL</th>
+                            <th>R:r</th>
+                            <th>L/S</th>
+                            <th>min</th>
+                            <th>Net P&L</th>
+                            <th>BA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in child_results %}
+                        <tr data-row-index="{{ loop.index0 }}" data-details='{{ row | tojson | safe }}'>
+                            <td>{{ row['stop_loss']|default(0)|round(2) }}</td>
+                            <td>{{ row['reward_ratio']|default(0)|round(2) }}</td>
+                            <td>{{ row['position']|default('N/A') }}</td>
+                            <td>{{ row['interval']|default('N/A') }}</td>
+                            <td class="net-profit">{{ row['net_profit']|default(0)|round(2) }}</td>
+                            <td class="batting-avg">{{ row['batting_avg']|default(0)|round(4) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Comparison Table with Z-Score Column -->
+                <table class="table" id="comparisonTable">
+                    <thead>
+                        <tr>
+                            <th>SL</th>
+                            <th>R:r</th>
+                            <th>L/S</th>
+                            <th>min</th>
+                            <th>PBA</th>
+                            <th>CBA</th>
+                            <th>Perf.</th>
+                            <th>% Diff</th>
+                            <th>Z-Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in comparison_results %}
+                        <tr data-row-index="{{ loop.index0 }}" data-details='{{ row | tojson | safe }}'>
+                            <td>{{ row['stop_loss']|default(0)|round(2) }}</td>
+                            <td>{{ row['reward_ratio']|default(0)|round(2) }}</td>
+                            <td>{{ row['position']|default('N/A') }}</td>
+                            <td>{{ row['interval']|default('N/A') }}</td>
+                            <td>{{ row['batting_avg_parent']|default(0)|round(2) }}</td>
+                            <td>{{ row['batting_avg_child']|default(0)|round(2) }}</td>
+                            <td>{{ row['performance']|default('N/A') }}</td>
+                            <td class="percent-diff">{{ row['percent_diff']|default(0)|round(5) }}%</td>
+                            <td class="z-score">{{ row['z_score']|default(0)|round(2) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function filterResults() {
+        const minStopLoss = parseFloat(document.getElementById("minStopLoss").value) || -Infinity;
+        const minBattingAvg = parseFloat(document.getElementById("minBattingAvg").value) || -Infinity;
+        const minNetProfit = parseFloat(document.getElementById("minNetProfit").value) || -Infinity;
+
+        document.querySelectorAll("#parentTable tbody tr").forEach((parentRow) => {
+            const index = parentRow.getAttribute('data-row-index');
+            const stopLossParent = parseFloat(parentRow.cells[0].textContent);
+            const battingAvgParent = parseFloat(parentRow.querySelector(".batting-avg")?.textContent || 0);
+            const netProfitParent = parseFloat(parentRow.querySelector(".net-profit")?.textContent || 0);
+
+            const childRow = document.querySelector(`#childTable tbody tr[data-row-index="${index}"]`);
+            const stopLossChild = parseFloat(childRow.cells[0].textContent);
+            const battingAvgChild = parseFloat(childRow.querySelector(".batting-avg")?.textContent || 0);
+            const netProfitChild = parseFloat(childRow.querySelector(".net-profit")?.textContent || 0);
+
+            const comparisonRow = document.querySelector(`#comparisonTable tbody tr[data-row-index="${index}"]`);
+
+            if ((stopLossParent < minStopLoss || battingAvgParent < minBattingAvg || netProfitParent < minNetProfit) ||
+                (stopLossChild < minStopLoss || battingAvgChild < minBattingAvg || netProfitChild < minNetProfit)) {
+                parentRow.classList.add("hidden");
+                childRow.classList.add("hidden");
+                comparisonRow.classList.add("hidden");
+            } else {
+                parentRow.classList.remove("hidden");
+                childRow.classList.remove("hidden");
+                comparisonRow.classList.remove("hidden");
+            }
+        });
+    }
+
+    function resetFilter() {
+        document.getElementById("minStopLoss").value = '';
+        document.getElementById("minBattingAvg").value = '';
+        document.getElementById("minNetProfit").value = '';
+        document.querySelectorAll(".table-section tbody tr").forEach(row => {
+            row.classList.remove("hidden");
+        });
+    }
+
+    function applyHeatmap() {
+        document.querySelectorAll(".net-profit").forEach(cell => {
+            const profit = parseFloat(cell.textContent);
+            if (profit > 200) cell.classList.add("profit-high");
+            else if (profit > 50) cell.classList.add("profit-medium");
+            else if (profit > 0) cell.classList.add("profit-low");
+            else if (profit > -50) cell.classList.add("loss-low");
+            else if (profit > -200) cell.classList.add("loss-medium");
+            else cell.classList.add("loss-high");
+        });
+
+        document.querySelectorAll(".percent-diff").forEach(cell => {
+            const percentDiff = parseFloat(cell.textContent);
+            if (percentDiff > 20) cell.classList.add("diff-high");
+            else if (percentDiff > 10) cell.classList.add("diff-medium");
+            else if (percentDiff > 0) cell.classList.add("diff-low");
+            else if (percentDiff < -20) cell.classList.add("diff-negative-high");
+            else if (percentDiff < -10) cell.classList.add("diff-negative-medium");
+            else cell.classList.add("diff-negative-low");
+        });
+
+        // Apply heatmap for Z-Score
+        document.querySelectorAll("#comparisonTable tbody tr").forEach(row => {
+            const zScoreCell = row.querySelector(".z-score");
+            const zScore = parseFloat(zScoreCell.textContent);
+            if (zScore < 1.0) zScoreCell.classList.add("z-score-low");
+            else if (zScore < 2.0) zScoreCell.classList.add("z-score-medium");
+            else zScoreCell.classList.add("z-score-high");
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+            applyHeatmap();
+
+            const popup = document.getElementById('popup');
+
+            function addHoverEvents(tableId) {
+                document.querySelectorAll(`#${tableId} tbody tr`).forEach(row => {
+                    row.addEventListener('mouseenter', (e) => {
+                        const details = JSON.parse(row.getAttribute('data-details'));
+                        let content = `<strong>Details:</strong><br>`;
+
+                        // Loop through details and format numeric values to two decimal places
+                        for (const [key, value] of Object.entries(details)) {
+                            if (typeof value === 'number') {
+                                content += `${key.replace(/_/g, ' ')}: ${value.toFixed(2)}<br>`;
+                            } else {
+                                content += `${key.replace(/_/g, ' ')}: ${value}<br>`;
+                            }
+                        }
+
+                        popup.innerHTML = content;
+                        popup.style.display = 'block';
+                        popup.style.top = e.pageY + 'px';
+                        popup.style.left = e.pageX + 'px';
+                    });
+
+                    row.addEventListener('mousemove', (e) => {
+                        popup.style.top = e.pageY + 10 + 'px';
+                        popup.style.left = e.pageX + 10 + 'px';
+                    });
+
+                    row.addEventListener('mouseleave', () => {
+                        popup.style.display = 'none';
+                        popup.innerHTML = '';
+                    });
+                });
+            }
+        addHoverEvents('parentTable');
+        addHoverEvents('childTable');
+        addHoverEvents('comparisonTable');
+    });
+</script>
+
+</body>
+
+</html>

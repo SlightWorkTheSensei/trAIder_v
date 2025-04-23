@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movers</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #00FF00;
+            font-family: monospace;
+            font-size: 16px;
+            padding: 20px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+            /* Adjust as needed */
+            background: linear-gradient(to bottom, rgb(0, 0, 0), red);
+        }
+
+        /* Style the scrollbar thumb */
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, rgb(60, 255, 0), rgb(255, 255, 255));
+            border-radius: 6px;
+            /* Adjust to match scrollbar width */
+        }
+
+        h1 {
+            color: #00FF00;
+            font-size: 24px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: fit-content;
+            background-color: #000000;
+            border: 1px solid #00FF00;
+        }
+
+        th,
+        td {
+            border: 1px solid #00FF00;
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #00FF00;
+            color: #000;
+        
+        }
+
+        button {
+            background-color: #000;
+            color: #00FF00;
+            border: 1px solid #00FF00;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #00FF00;
+            color: #000;
+        }
+    </style>
+    <script>
+        var priceSortOrder = 1; // Variable to track the sorting order of the price column
+        var avgVolumeSortOrder = 1; // Variable to track the sorting order of the average volume column
+        var currentCommitmentSortOrder = 1; // Variable to track the sorting order of the current commitment column
+
+        function sortVolume() {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("moversTable");
+            switching = true;
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("td")[4]; // Change index to the volume column index (0-based)
+                    y = rows[i + 1].getElementsByTagName("td")[4];
+                    if (parseInt(x.innerHTML.replace(/,/g, "")) < parseInt(y.innerHTML.replace(/,/g, ""))) { // Convert to integer after removing commas
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+
+        function sortPrice() {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("moversTable");
+            switching = true;
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("td")[1]; // Change index to the price column index (0-based)
+                    y = rows[i + 1].getElementsByTagName("td")[1];
+                    if (priceSortOrder === 1) {
+                        if (parseFloat(x.innerHTML.replace(/,/g, "")) > parseFloat(y.innerHTML.replace(/,/g, ""))) { // Convert to float after removing commas
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else {
+                        if (parseFloat(x.innerHTML.replace(/,/g, "")) < parseFloat(y.innerHTML.replace(/,/g, ""))) { // Convert to float after removing commas
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+            // Toggle sorting order
+            priceSortOrder *= -1;
+        }
+
+        function refreshData() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/refresh-data", true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    alert("Data refreshed successfully!");
+                    window.location.reload(); // Reload the page to reflect updated data
+                } else if (xhr.readyState === 4 && xhr.status !== 200) {
+                    alert("Failed to refresh data!");
+                }
+            };
+            xhr.send();
+        }
+        function sortPriceChange() {
+    var table, rows, switching, i, x, y, shouldSwitch;
+    table = document.getElementById("moversTable");
+    switching = true;
+    while (switching) {
+        switching = false;
+        rows = table.rows;
+        for (i = 1; i < (rows.length - 1); i++) {
+            shouldSwitch = false;
+            x = rows[i].getElementsByTagName("td")[2]; // Change index to the price change column index (0-based)
+            y = rows[i + 1].getElementsByTagName("td")[2];
+            if (parseFloat(x.innerHTML) < parseFloat(y.innerHTML)) { // Comparing price changes directly
+                shouldSwitch = true;
+                break;
+            }
+        }
+        if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+        }
+    }
+}
+function sortPercentChange() {
+    var table, rows, switching, i, x, y, shouldSwitch;
+    table = document.getElementById("moversTable");
+    switching = true;
+    while (switching) {
+        switching = false;
+        rows = table.rows;
+        for (i = 1; i < (rows.length - 1); i++) {
+            shouldSwitch = false;
+            x = rows[i].getElementsByTagName("td")[3]; // Change index to the percent change column index (0-based)
+            y = rows[i + 1].getElementsByTagName("td")[3];
+            if (parseFloat(x.innerHTML) < parseFloat(y.innerHTML)) { // Comparing percent changes directly
+                shouldSwitch = true;
+                break;
+            }
+        }
+        if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+        }
+    }
+}
+
+
+function sortAvgVolume() {
+        var table, rows, switching, i, x, y, shouldSwitch;
+        table = document.getElementById("moversTable");
+        switching = true;
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("td")[5]; // AvgVolume column index
+                y = rows[i + 1].getElementsByTagName("td")[5];
+                if (avgVolumeSortOrder === 1) {
+                    if (parseFloat(x.innerHTML.replace(/,/g, "")) > parseFloat(y.innerHTML.replace(/,/g, ""))) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                } else {
+                    if (parseFloat(x.innerHTML.replace(/,/g, "")) < parseFloat(y.innerHTML.replace(/,/g, ""))) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+            }
+        }
+        // Toggle sorting order
+        avgVolumeSortOrder *= -1;
+    }
+
+    function sortCurrentCommitment() {
+        var table, rows, switching, i, x, y, shouldSwitch;
+        table = document.getElementById("moversTable");
+        switching = true;
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("td")[6]; // CurrentCommitment column index
+                y = rows[i + 1].getElementsByTagName("td")[6];
+                if (currentCommitmentSortOrder === 1) {
+                    if (parseFloat(x.innerHTML) > parseFloat(y.innerHTML)) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                } else {
+                    if (parseFloat(x.innerHTML) < parseFloat(y.innerHTML)) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+            }
+        }
+        // Toggle sorting order
+        currentCommitmentSortOrder *= -1;
+    }
+    </script>
+</head>
+
+<body>
+    <h1>Market Movers</h1>
+    <button onclick="refreshData()">Refresh Data</button> <!-- Refresh button -->
+    <table id="moversTable">
+        <tr>
+            <th>Ticker</th>
+            <th>Price <button onclick="sortPrice()">Sort</button></th>
+            <th>Price Change <button onclick="sortPriceChange()">Sort</button></th>
+            <th>Percent Change <button onclick="sortPercentChange()">Sort</button></th>
+            <th>Volume <button onclick="sortVolume()">Sort</button></th>
+            <th>Average Volume <button onclick="sortAvgVolume()">Sort</button></th>
+            <th>Current Commitment <button onclick="sortCurrentCommitment()">Sort</button></th>
+        </tr>
+        
+        {% for item in data %}
+        <tr>
+            <td>{{ item.ticker }}</td>
+            <td>{{ item.price }}</td>
+            <td>{{ item.price_change }}</td>
+            <td>{{ item.percent_change }}</td>
+            <td>{{ item.volume }}</td>
+            <td>{{ item.avgVolume }}</td>
+            <td>{{ item.currentCommitment }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+
+
+
+</html>

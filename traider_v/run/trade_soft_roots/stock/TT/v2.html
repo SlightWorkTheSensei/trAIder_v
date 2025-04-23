@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Draggable Height Adjuster for Iframes</title>
+    <style>
+        .iframe-container {
+            width: 100%;
+            position: relative; /* Required for absolute positioning of the button */
+        }
+
+        iframe {
+            width: 100%;
+            border: none;
+        }
+
+        .drag-btn {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50; /* Green background */
+            color: white; /* White text */
+            padding: 5px 10px;
+            cursor: ns-resize; /* Cursor indicates vertical resize */
+        }
+    </style>
+</head>
+<body>
+    <div class="iframe-container" id="iframeContainer1">
+      
+        <iframe id="iframe1" src="http://127.0.0.1:5000/" style="height: 300px;"></iframe>
+        <div class="drag-btn" id="dragBtn1" draggable="true">Drag</div>
+    </div>
+    <div class="iframe-container" id="iframeContainer2">
+      
+        <iframe id="iframe2" src="https://docs.google.com/spreadsheets/d/1DHl32VZRXQPJZLO1T9h8CQxa0HkHLE1HFUF9zpwIfpg/edit#gid=0" style="height: 300px;"></iframe>
+        <div class="drag-btn" id="dragBtn2" draggable="true">Drag</div>
+    </div>
+    <script>
+        document.querySelectorAll('.drag-btn').forEach(btn => {
+            let isDragging = false;
+            let startY;
+            let startHeight;
+
+            btn.addEventListener('mousedown', function(event) {
+                isDragging = true;
+                startY = event.clientY;
+                startHeight = this.parentElement.querySelector('iframe').offsetHeight;
+                event.preventDefault(); // Prevent text selection during drag
+            });
+
+            document.addEventListener('mousemove', function(event) {
+                if (isDragging) {
+                    let newHeight = startHeight + (event.clientY - startY);
+                    if(newHeight >= 100) { // Minimum height
+                        btn.parentElement.querySelector('iframe').style.height = newHeight + 'px';
+                    }
+                }
+            });
+
+            document.addEventListener('mouseup', function(event) {
+                isDragging = false;
+            });
+        });
+    </script>
+</body>
+</html>

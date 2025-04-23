@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - Backtest Summary</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0d0d0d; /* Dark theme background */
+            color: #00e0ff; /* Lightning blue text */
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            margin-top: 50px;
+            text-align: center;
+        }
+
+        .card {
+            background-color: #1a1a1a; /* Slightly lighter black for card */
+            border: 1px solid #00e0ff; /* Lightning blue border */
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 224, 255, 0.5);
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #ff6666; /* Bright red for error title */
+            margin-bottom: 20px;
+        }
+
+        .error-message {
+            color: #ffffff; /* White text for error details */
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .btn-primary {
+            background-color: #00e0ff;
+            border: none;
+            color: #0d0d0d;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+
+        .btn-primary:hover {
+            background-color: #004d66; /* Darker blue hover effect */
+            color: #ffffff;
+        }
+
+        ul {
+            text-align: left;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <h1>Something Went Wrong</h1>
+                <p class="error-message">
+                    We encountered the following issues while processing your request:
+                </p>
+                <ul class="error-message">
+                    {% for error in error_messages %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                <p>
+                    Please check your input and try again. If the problem persists, verify the ticker symbol and ensure the selected intervals and duration are valid.
+                </p>
+                <a href="/" class="btn btn-primary">Go Back</a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade Table</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* General Body and Font Styling */
+        body {
+            background-color: #121212;
+            color: #7cff81;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1em;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3 {
+            color: #f84949;
+            font-family: 'Press Start 2P', monospace;
+            text-shadow: 0 0 8px #f84949, 0 0 20px #f84949;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .container {
+            background: #1C1C1C;
+            border-radius: 15px;
+            border: 2px solid #f84949;
+            padding: 30px;
+            width: 90%;
+            box-shadow: 0 0 15px #f84949;
+        }
+
+        input[type="text"] {
+            background-color: #222222;
+            color: #f84949;
+            border: 2px solid #f84949;
+            padding: 15px;
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            outline: none;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        button {
+            background-color: #f84949;
+            border: none;
+            color: #111;
+            padding: 15px 30px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 0 10px #f84949;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            box-shadow: 0 0 25px #f84949, 0 0 50px #f84949;
+            color: #FFF;
+        }
+
+        .results-container {
+            border: 1px solid #f84949;
+            padding: 20px;
+            margin-top: 30px;
+            border-radius: 8px;
+            background: #151515;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            border: 1px solid #f84949;
+            padding: 12px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        th {
+            background-color: #222222;
+            color: #f84949;
+            text-shadow: 0 0 5px #f84949;
+        }
+
+        tr td {
+            background-color: #151515;
+        }
+
+        .visualizations-section {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #f84949;
+        }
+
+        .chart-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            box-shadow: 0 0 20px #f84949;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Trade Table</h1>
+
+        <form method="post" id="backtest-form">
+            <div class="menu">
+                <label for="ticker">Enter Stock Ticker (e.g., AAPL, MSFT, TSLA):</label>
+                <input type="text" id="ticker" name="ticker" required>
+            </div>
+
+            <button type="submit">Run Backtest</button>
+        </form>
+
+        {% if results %}
+        
+        {% if visualizations %}
+        <div class="visualizations-section">
+            <h2>Scatter Plots for {{ selected_ticker }}</h2>
+            <div class="chart-container">
+                {% for scatter_plot in visualizations.scatter_plots %}
+                <iframe src="{{ url_for('static', filename=scatter_plot) }}"></iframe>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+
+        <div class="results-container">
+            <h2>Backtest Results for {{ selected_ticker }}</h2>
+            <table id="results-table">
+                <thead>
+                    <tr>
+                        <th>Interval</th>
+                        <th>Stop Loss</th>
+                        <th>Reward</th>
+                        <th>Trade Type</th>
+                        <th>Entry Method</th>
+                        <th>Total Trades</th>
+                        <th>Wins</th>
+                        <th>Losses</th>
+                        <th>Neutral Trades</th>
+                        <th>Gross Profit</th>
+                        <th>Gross Loss</th>
+                        <th>Net P/L</th>
+                        <th>Net P/L (%)</th>
+                        <th>Unrealized Gain</th>
+                        <th>Unrealized Loss</th>
+                        <th>Batting Average</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in results %}
+                    <tr>
+                        <td>{{ result['Interval'] }}</td>
+                        <td>{{ result['Stop Loss'] }}</td>
+                        <td>{{ result['Reward'] }}</td>
+                        <td>{{ result['Trade Type'] }}</td>
+                        <td>{{ result['Entry Method'] }}</td>
+                        <td>{{ result['Total Trades'] }}</td>
+                        <td>{{ result['Wins'] }}</td>
+                        <td>{{ result['Losses'] }}</td>
+                        <td>{{ result['Neutral Trades'] }}</td>
+                        <td>{{ result['Gross Profit'] }}</td>
+                        <td>{{ result['Gross Loss'] }}</td>
+                        <td>{{ result['Net P/L'] }}</td>
+                        <td>{{ result['Net P/L (%)'] }}</td>
+                        <td>{{ result['Unrealized Gain'] }}</td> <!-- Added Unrealized Gain -->
+                        <td>{{ result['Unrealized Loss'] }}</td> <!-- Added Unrealized Loss -->
+                        <td>{{ result['Batting Average'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                
+            </table>
+        </div>
+
+        {% endif %}
+    </div>
+
+    <script>
+        // Function to apply the conditional color formatting
+        function applyTableColors() {
+            const rows = document.querySelectorAll("#results-table tbody tr");
+
+            rows.forEach(row => {
+                const netPLPercentCell = row.cells[12];  // Assuming Net P/L (%) is the 13th column (index 12)
+                const netPLPercent = parseFloat(netPLPercentCell.textContent);
+
+                if (!isNaN(netPLPercent)) {
+                    if (netPLPercent > 50) {
+                        row.style.backgroundColor = "#006400"; // Dark green for more than 50% profit
+                    } else if (netPLPercent > 0 && netPLPercent <= 50) {
+                        row.style.backgroundColor = "#7cff81"; // Light green for up to 50% profit
+                    } else if (netPLPercent < -50) {
+                        row.style.backgroundColor = "#8B0000"; // Dark red for more than 50% loss
+                    } else if (netPLPercent <= 0 && netPLPercent >= -50) {
+                        row.style.backgroundColor = "#ff9999"; // Light red for up to 50% loss
+                    }
+                }
+            });
+        }
+
+        // Call the function after the page loads
+        window.onload = function() {
+            applyTableColors();
+        }
+    </script>
+</body>
+
+</html>

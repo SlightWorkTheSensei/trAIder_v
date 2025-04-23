@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade Scan II</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            background-color: black;
+        }
+        .chart-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #48e998;
+            font-size: 3rem;
+            margin-top: 50px;
+        }
+        .chart-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        form button {
+            padding: 5px 10px;
+            background-color: #48e998;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #data-table {
+            margin-top: 20px;
+            width: 100%;
+            color: #48e998;
+            border-collapse: collapse;
+        }
+        #data-table th, #data-table td {
+            border: 1px solid #48e998;
+            padding: 8px;
+            text-align: left;
+        }
+        #data-table th {
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Trade Scan II</h1>
+    <form id="stockForm">
+        <label for="ticker">Ticker:</label>
+        <input type="text" id="ticker" name="ticker" required>
+        <button type="submit">Plot</button>
+    </form>
+    <div class="chart-container">
+        <div class="chart-box" id="chart-1min"></div>
+        <div class="chart-box" id="chart-15min"></div>
+        <div class="chart-box" id="chart-60min"></div>
+        <div class="chart-box" id="chart-daily"></div>
+    </div>
+    <table id="data-table"></table>
+
+    <script>
+        $(document).ready(function() {
+            $('#stockForm').on('submit', function(event) {
+                event.preventDefault();
+                var ticker = $('#ticker').val();
+                
+                $.ajax({
+                    url: '/plot',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ ticker: ticker }),
+                    success: function(response) {
+                        Plotly.newPlot(document.getElementById('chart-1min'), JSON.parse(response.fig_1min).data, JSON.parse(response.fig_1min).layout);
+                        Plotly.newPlot(document.getElementById('chart-15min'), JSON.parse(response.fig_15min).data, JSON.parse(response.fig_15min).layout);
+                        Plotly.newPlot(document.getElementById('chart-60min'), JSON.parse(response.fig_60min).data, JSON.parse(response.fig_60min).layout);
+                        Plotly.newPlot(document.getElementById('chart-daily'), JSON.parse(response.fig_daily).data, JSON.parse(response.fig_daily).layout);
+                        
+                        updateDataTable(response.data);
+                    }
+                });
+            });
+        });
+
+        function updateDataTable(data) {
+            const table = document.getElementById('data-table');
+            table.innerHTML = ''; // Clear existing table
+
+            const header = table.createTHead();
+            const headerRow = header.insertRow(0);
+            const cell1 = headerRow.insertCell(0);
+            const cell2 = headerRow.insertCell(1);
+            cell1.textContent = 'Metric';
+            cell2.textContent = 'Value';
+
+            const tbody = table.createTBody();
+            for (const key in data) {
+                if (data.hasOwnProperty(key)) {
+                    const row = tbody.insertRow();
+                    const cell1 = row.insertCell(0);
+                    const cell2 = row.insertCell(1);
+                    cell1.textContent = key;
+                    cell2.textContent = typeof data[key] === 'number' ? data[key].toFixed(2) : data[key];
+                }
+            }
+        }
+    </script>
+</body>
+</html>
