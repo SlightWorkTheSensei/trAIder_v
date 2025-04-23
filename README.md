@@ -31,11 +31,24 @@ Each Flask app is a standalone tool for market research, strategy development, o
 …and more coming.
 
 ## 🖼 Preview
-> [insert screenshot or Loom link here]
+> trade Graphic
+ ![Flask Apps Dashboard - Google Chrome 4_23_2025 9_40_06 AM](https://github.com/user-attachments/assets/a579e9ed-f869-4dd7-8c89-0e380f202489)
+![Flask Apps Dashboard - Google Chrome 4_23_2025 9_40_36 AM](https://github.com/user-attachments/assets/47e18f82-621e-4cf9-a77a-be53deb10581)
+![Flask Apps Dashboard - Google Chrome 4_23_2025 9_40_53 AM](https://github.com/user-attachments/assets/6df6b160-1ae5-417c-9a18-a5d56dad2d12)
+
+> Auto FTC (Future Trader Contract Calculator)
+![Flask Apps Dashboard - Google Chrome 4_23_2025 9_41_23 AM](https://github.com/user-attachments/assets/8de90b70-2aa0-43e9-8844-10b59de05986)
+![Flask Apps Dashboard - Google Chrome 4_23_2025 9_41_53 AM](https://github.com/user-attachments/assets/6a6a180a-78f6-4a9d-bf32-463a44ec16d9)
+![Flask Apps Dashboard - Google Chrome 4_23_2025 9_42_02 AM](https://github.com/user-attachments/assets/fbdc0231-d1cf-4619-8f79-5b3002e9a58f)
+
+> Candle Project
+![Flask Apps Dashboard - Google Chrome 4_23_2025 9_42_55 AM](https://github.com/user-attachments/assets/96609a60-95c6-40a0-ae65-1f40a6813d14)
+![Flask Apps Dashboard - Google Chrome 4_23_2025 9_43_03 AM](https://github.com/user-attachments/assets/46c2bf66-db80-4ad4-8422-ee3feabcbb38)
+![Flask Apps Dashboard - Google Chrome 4_23_2025 9_43_07 AM](https://github.com/user-attachments/assets/e2b88740-9e0c-48dc-b2c8-92a571059a2b)
+
+
+
 
 ## 📜 License
 MIT
 
-## 📡 Learn More
-- [Resume](https://github.com/SlightWorkTheSensei/resume)
-- [LinkedIn](https://linkedin.com/in/alexander-fuleki-5a59b1260/)
